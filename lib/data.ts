@@ -204,7 +204,12 @@ async function initializeData() {
     if (loaded.length === 0) {
       // First time - save default properties
       propertiesCache = DEFAULT_PROPERTIES;
-      await saveProperties(propertiesCache);
+      try {
+        await saveProperties(propertiesCache);
+      } catch (error) {
+        // If save fails (e.g., read-only filesystem), continue with in-memory cache
+        console.warn('Could not save default properties, using in-memory cache');
+      }
     } else {
       propertiesCache = loaded;
     }

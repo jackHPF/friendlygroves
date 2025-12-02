@@ -3,28 +3,51 @@ import { readFile, writeFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
 
-const DATA_DIR = path.join(process.cwd(), 'data');
+// Use /tmp for Vercel (writable) or data/ for other platforms
+const IS_VERCEL = process.env.VERCEL === '1' || process.env.VERCEL_ENV;
+const DATA_DIR = IS_VERCEL 
+  ? path.join('/tmp', 'friendlygroves-data')
+  : path.join(process.cwd(), 'data');
+
 const PROPERTIES_FILE = path.join(DATA_DIR, 'properties.json');
 const REVIEWS_FILE = path.join(DATA_DIR, 'reviews.json');
 const BOOKINGS_FILE = path.join(DATA_DIR, 'bookings.json');
 
 // Ensure data directory exists
 async function ensureDataDir() {
-  if (!existsSync(DATA_DIR)) {
-    await mkdir(DATA_DIR, { recursive: true });
+  try {
+    if (!existsSync(DATA_DIR)) {
+      await mkdir(DATA_DIR, { recursive: true });
+    }
+  } catch (error: any) {
+    // On Vercel or read-only filesystems, this might fail
+    // We'll handle it gracefully in read/write functions
+    console.warn('Could not create data directory (read-only filesystem?):', error.message);
   }
 }
 
 // Generic JSON file read/write functions
 export async function readJsonFile<T>(filename: string, defaultValue: T): Promise<T> {
-  await ensureDataDir();
+  try {
+    await ensureDataDir();
+  } catch (error) {
+    // If we can't create directory, return default (read-only filesystem)
+    return defaultValue;
+  }
+  
   const filePath = path.join(DATA_DIR, filename);
   try {
     const data = await readFile(filePath, 'utf8');
     return JSON.parse(data) as T;
   } catch (error: any) {
     if (error.code === 'ENOENT') {
-      await writeJsonFile(filename, defaultValue);
+      // File doesn't exist, try to create it (might fail on read-only FS)
+      try {
+        await writeJsonFile(filename, defaultValue);
+      } catch (writeError) {
+        // If write fails (read-only), just return default
+        console.warn(`Could not create ${filename} (read-only filesystem), using defaults`);
+      }
       return defaultValue;
     }
     console.error(`Error reading ${filename}:`, error);
@@ -33,13 +56,30 @@ export async function readJsonFile<T>(filename: string, defaultValue: T): Promis
 }
 
 export async function writeJsonFile<T>(filename: string, data: T): Promise<void> {
-  await ensureDataDir();
+  try {
+    await ensureDataDir();
+  } catch (error) {
+    // If we can't create directory, this is likely a read-only filesystem
+    console.warn(`Cannot write ${filename} - read-only filesystem (Vercel serverless). Data will not persist.`);
+    // Don't throw - allow app to continue in read-only mode
+    return;
+  }
+  
   const filePath = path.join(DATA_DIR, filename);
   try {
     await writeFile(filePath, JSON.stringify(data, null, 2), 'utf8');
-  } catch (error) {
+  } catch (error: any) {
+    // On Vercel, writes to /tmp work but don't persist across deployments
+    // Don't throw - log warning and continue
+    if (error.code === 'EACCES' || error.code === 'EROFS') {
+      console.warn(`Cannot write ${filename} - read-only filesystem. Consider using a database for production.`);
+      return;
+    }
     console.error(`Error writing ${filename}:`, error);
-    throw error;
+    // Only throw if it's not a filesystem permission error
+    if (error.code !== 'EACCES' && error.code !== 'EROFS') {
+      throw error;
+    }
   }
 }
 
@@ -63,9 +103,17 @@ export async function saveProperties(properties: Property[]): Promise<void> {
   try {
     await ensureDataDir();
     await writeFile(PROPERTIES_FILE, JSON.stringify(properties, null, 2), 'utf-8');
-  } catch (error) {
+  } catch (error: any) {
+    // On Vercel, writes might fail due to read-only filesystem
+    if (error.code === 'EACCES' || error.code === 'EROFS') {
+      console.warn('Cannot save properties - read-only filesystem. Consider using a database for production.');
+      return;
+    }
     console.error('Error saving properties:', error);
-    throw error;
+    // Only throw if it's not a filesystem permission error
+    if (error.code !== 'EACCES' && error.code !== 'EROFS') {
+      throw error;
+    }
   }
 }
 
@@ -89,9 +137,17 @@ export async function saveReviews(reviews: Review[]): Promise<void> {
   try {
     await ensureDataDir();
     await writeFile(REVIEWS_FILE, JSON.stringify(reviews, null, 2), 'utf-8');
-  } catch (error) {
+  } catch (error: any) {
+    // On Vercel, writes might fail due to read-only filesystem
+    if (error.code === 'EACCES' || error.code === 'EROFS') {
+      console.warn('Cannot save reviews - read-only filesystem. Consider using a database for production.');
+      return;
+    }
     console.error('Error saving reviews:', error);
-    throw error;
+    // Only throw if it's not a filesystem permission error
+    if (error.code !== 'EACCES' && error.code !== 'EROFS') {
+      throw error;
+    }
   }
 }
 
@@ -115,9 +171,17 @@ export async function saveBookings(bookings: Booking[]): Promise<void> {
   try {
     await ensureDataDir();
     await writeFile(BOOKINGS_FILE, JSON.stringify(bookings, null, 2), 'utf-8');
-  } catch (error) {
+  } catch (error: any) {
+    // On Vercel, writes might fail due to read-only filesystem
+    if (error.code === 'EACCES' || error.code === 'EROFS') {
+      console.warn('Cannot save bookings - read-only filesystem. Consider using a database for production.');
+      return;
+    }
     console.error('Error saving bookings:', error);
-    throw error;
+    // Only throw if it's not a filesystem permission error
+    if (error.code !== 'EACCES' && error.code !== 'EROFS') {
+      throw error;
+    }
   }
 }
 

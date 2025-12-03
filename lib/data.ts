@@ -118,10 +118,10 @@ const DEFAULT_PROPERTIES: Property[] = [
     bedrooms: 2,
     bathrooms: 2,
     images: [
-      '/images/centuryview-1.jpg',
-      '/images/centuryview-2.jpg',
-      '/images/centuryview-3.jpg',
-      '/images/centuryview-4.jpg',
+      '/images/1763618217252-q97ahjoo6sr.jpeg',
+      '/images/1763618228063-stp2zf08cm.jpeg',
+      '/images/1763618234553-tsnpnxz0zuh.jpeg',
+      '/images/1763618320397-us1clranz6.jpeg',
     ],
     amenities: [
       'WiFi',
@@ -153,10 +153,10 @@ const DEFAULT_PROPERTIES: Property[] = [
     bedrooms: 4,
     bathrooms: 3,
     images: [
-      '/images/mangrovesframhouse-1.jpg',
-      '/images/mangrovesframhouse-2.jpg',
-      '/images/mangrovesframhouse-3.jpg',
-      '/images/mangrovesframhouse-4.jpg',
+      '/images/1763618326670-w1u1ry8p7p.jpeg',
+      '/images/1763618333210-lzjkju5yjyb.jpeg',
+      '/images/1763618842126-sjru2vbhmd.jpeg',
+      '/images/1763618847707-29vkbqm75w.jpeg',
     ],
     amenities: [
       'WiFi',

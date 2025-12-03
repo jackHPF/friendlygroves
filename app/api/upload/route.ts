@@ -3,6 +3,9 @@ import { writeFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
 
+// Check if we're on Vercel (read-only filesystem)
+const IS_VERCEL = process.env.VERCEL === '1' || process.env.VERCEL_ENV;
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
@@ -59,6 +62,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // On Vercel, file uploads to public/ won't persist
+    if (IS_VERCEL) {
+      return NextResponse.json(
+        { 
+          error: 'File uploads are not supported on Vercel. Please use a cloud storage service like Cloudinary, AWS S3, or Vercel Blob. For now, you can add images by URL or commit them to the repository.',
+          requiresCloudStorage: true
+        },
+        { status: 501 }
+      );
+    }
+
     // Generate unique filename
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
@@ -74,13 +88,39 @@ export async function POST(request: NextRequest) {
     const uploadPath = path.join(process.cwd(), uploadDir);
 
     // Create directory if it doesn't exist
-    if (!existsSync(uploadPath)) {
-      await mkdir(uploadPath, { recursive: true });
+    try {
+      if (!existsSync(uploadPath)) {
+        await mkdir(uploadPath, { recursive: true });
+      }
+    } catch (error: any) {
+      if (error.code === 'EACCES' || error.code === 'EROFS') {
+        return NextResponse.json(
+          { 
+            error: 'Cannot write to filesystem. The filesystem is read-only. Please use a cloud storage service for file uploads.',
+            requiresCloudStorage: true
+          },
+          { status: 503 }
+        );
+      }
+      throw error;
     }
 
     // Save file
     const filePath = path.join(uploadPath, filename);
-    await writeFile(filePath, buffer);
+    try {
+      await writeFile(filePath, buffer);
+    } catch (error: any) {
+      if (error.code === 'EACCES' || error.code === 'EROFS') {
+        return NextResponse.json(
+          { 
+            error: 'Cannot write to filesystem. The filesystem is read-only. Please use a cloud storage service for file uploads.',
+            requiresCloudStorage: true
+          },
+          { status: 503 }
+        );
+      }
+      throw error;
+    }
 
     // Return the public URL
     const publicUrl = type === 'image' 
@@ -92,10 +132,13 @@ export async function POST(request: NextRequest) {
       url: publicUrl,
       filename: filename,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error uploading file:', error);
     return NextResponse.json(
-      { error: 'Failed to upload file' },
+      { 
+        error: error.message || 'Failed to upload file',
+        requiresCloudStorage: IS_VERCEL
+      },
       { status: 500 }
     );
   }

@@ -83,10 +83,10 @@ const DEFAULT_PROPERTIES: Property[] = [
     bedrooms: 2,
     bathrooms: 2,
     images: [
-      '/images/rishikondabayview-1.jpg',
-      '/images/rishikondabayview-2.jpg',
-      '/images/rishikondabayview-3.jpg',
-      '/images/rishikondabayview-4.jpg',
+      '/images/1763618853943-sud07whly6r.jpeg',
+      '/images/1763618842126-sjru2vbhmd.jpeg',
+      '/images/1763618847707-29vkbqm75w.jpeg',
+      '/images/1763618333210-lzjkju5yjyb.jpeg',
     ],
     amenities: [
       'WiFi',

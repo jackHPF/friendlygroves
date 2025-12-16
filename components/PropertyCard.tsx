@@ -50,6 +50,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
 
   const [imageError, setImageError] = useState(false);
   const imageSrc = property.images?.[0];
+  const isVercelBlob = imageSrc?.includes('blob.vercel-storage.com');
 
   return (
     <Link href={`/properties/${property.slug}`}>
@@ -63,6 +64,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
               fill
               className="object-cover transition-transform duration-300 group-hover:scale-110"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              unoptimized={isVercelBlob}
               onError={() => setImageError(true)}
             />
           ) : (

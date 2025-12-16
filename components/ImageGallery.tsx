@@ -45,6 +45,9 @@ export default function ImageGallery({ images, propertyName }: ImageGalleryProps
     setCurrentIndex(index);
   };
 
+  // Helper to check if image is from Vercel Blob
+  const isVercelBlob = (url: string) => url?.includes('blob.vercel-storage.com');
+
   // Airbnb-style grid layout
   if (images.length === 1) {
     return (
@@ -55,6 +58,7 @@ export default function ImageGallery({ images, propertyName }: ImageGalleryProps
           fill
           className="object-cover"
           priority
+          unoptimized={isVercelBlob(mainImage)}
           onError={() => handleImageError(currentIndex)}
         />
       </div>
@@ -71,6 +75,7 @@ export default function ImageGallery({ images, propertyName }: ImageGalleryProps
               alt={`${propertyName} - Image ${index + 1}`}
               fill
               className="object-cover"
+              unoptimized={isVercelBlob(image)}
               onError={() => handleImageError(index)}
             />
           </div>
@@ -94,6 +99,7 @@ export default function ImageGallery({ images, propertyName }: ImageGalleryProps
               fill
               className="object-cover"
               priority
+              unoptimized={isVercelBlob(mainImage)}
               onError={() => handleImageError(currentIndex)}
             />
           ) : (
@@ -150,6 +156,7 @@ export default function ImageGallery({ images, propertyName }: ImageGalleryProps
                       alt={`${propertyName} - Image ${actualIndex + 1}`}
                       fill
                       className="object-cover"
+                      unoptimized={isVercelBlob(image)}
                       onError={() => handleImageError(actualIndex)}
                     />
                   ) : (

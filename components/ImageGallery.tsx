@@ -45,8 +45,16 @@ export default function ImageGallery({ images, propertyName }: ImageGalleryProps
     setCurrentIndex(index);
   };
 
-  // Helper to check if image is from Vercel Blob
-  const isVercelBlob = (url: string) => url?.includes('blob.vercel-storage.com');
+  // Helper to check if image should be unoptimized
+  // Vercel Blob URLs and local /images/ paths should be unoptimized
+  const shouldUnoptimize = (url: string) => {
+    if (!url) return false;
+    // Vercel Blob URLs
+    if (url.includes('blob.vercel-storage.com')) return true;
+    // Local paths starting with /images/ (may not exist in production)
+    if (url.startsWith('/images/')) return true;
+    return false;
+  };
 
   // Airbnb-style grid layout
   if (images.length === 1) {
@@ -58,7 +66,7 @@ export default function ImageGallery({ images, propertyName }: ImageGalleryProps
           fill
           className="object-cover"
           priority
-          unoptimized={isVercelBlob(mainImage)}
+          unoptimized={shouldUnoptimize(mainImage)}
           onError={() => handleImageError(currentIndex)}
         />
       </div>
@@ -75,7 +83,7 @@ export default function ImageGallery({ images, propertyName }: ImageGalleryProps
               alt={`${propertyName} - Image ${index + 1}`}
               fill
               className="object-cover"
-              unoptimized={isVercelBlob(image)}
+              unoptimized={shouldUnoptimize(image)}
               onError={() => handleImageError(index)}
             />
           </div>
@@ -99,7 +107,7 @@ export default function ImageGallery({ images, propertyName }: ImageGalleryProps
               fill
               className="object-cover"
               priority
-              unoptimized={isVercelBlob(mainImage)}
+              unoptimized={shouldUnoptimize(mainImage)}
               onError={() => handleImageError(currentIndex)}
             />
           ) : (
@@ -156,7 +164,7 @@ export default function ImageGallery({ images, propertyName }: ImageGalleryProps
                       alt={`${propertyName} - Image ${actualIndex + 1}`}
                       fill
                       className="object-cover"
-                      unoptimized={isVercelBlob(image)}
+                      unoptimized={shouldUnoptimize(image)}
                       onError={() => handleImageError(actualIndex)}
                     />
                   ) : (

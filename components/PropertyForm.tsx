@@ -132,9 +132,7 @@ export default function PropertyForm({ property }: PropertyFormProps) {
 
       if (!response.ok) {
         const errorData = await response.json();
-        const errorMessage = errorData.requiresCloudStorage
-          ? 'File uploads are not available on Vercel. Please add images by URL instead, or commit images to the repository. See deployment documentation for cloud storage options.'
-          : errorData.error || 'Failed to upload image';
+        const errorMessage = errorData.error || 'Failed to upload image';
         throw new Error(errorMessage);
       }
 
@@ -188,9 +186,7 @@ export default function PropertyForm({ property }: PropertyFormProps) {
 
       if (!response.ok) {
         const errorData = await response.json();
-        const errorMessage = errorData.requiresCloudStorage
-          ? 'File uploads are not available on Vercel. Please add videos by URL instead, or commit videos to the repository. See deployment documentation for cloud storage options.'
-          : errorData.error || 'Failed to upload video';
+        const errorMessage = errorData.error || 'Failed to upload video';
         throw new Error(errorMessage);
       }
 

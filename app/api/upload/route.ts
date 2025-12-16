@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { put } from '@vercel/blob';
 import { writeFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
 
 // Check if we're on Vercel (read-only filesystem)
 const IS_VERCEL = process.env.VERCEL === '1' || process.env.VERCEL_ENV;
+// Check if Vercel Blob is configured
+const BLOB_READ_WRITE_TOKEN = process.env.BLOB_READ_WRITE_TOKEN;
+const USE_VERCEL_BLOB = !!BLOB_READ_WRITE_TOKEN;
 
 export async function POST(request: NextRequest) {
   try {
@@ -62,17 +66,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // On Vercel, file uploads to public/ won't persist
-    if (IS_VERCEL) {
-      return NextResponse.json(
-        { 
-          error: 'File uploads are not supported on Vercel. Please use a cloud storage service like Cloudinary, AWS S3, or Vercel Blob. For now, you can add images by URL or commit them to the repository.',
-          requiresCloudStorage: true
-        },
-        { status: 501 }
-      );
-    }
-
     // Generate unique filename
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
@@ -83,7 +76,45 @@ export async function POST(request: NextRequest) {
     const extension = path.extname(originalName) || (type === 'image' ? '.jpg' : '.mp4');
     const filename = `${timestamp}-${randomString}${extension}`;
 
-    // Determine upload directory
+    // Use Vercel Blob if configured, otherwise use local filesystem
+    if (USE_VERCEL_BLOB) {
+      try {
+        // Upload to Vercel Blob
+        const blobPath = type === 'image' ? `images/${filename}` : `videos/${filename}`;
+        const blob = await put(blobPath, buffer, {
+          access: 'public',
+          token: BLOB_READ_WRITE_TOKEN,
+        });
+
+        return NextResponse.json({
+          success: true,
+          url: blob.url,
+          filename: filename,
+        });
+      } catch (error: any) {
+        console.error('Error uploading to Vercel Blob:', error);
+        return NextResponse.json(
+          { 
+            error: 'Failed to upload to Vercel Blob. Please check your BLOB_READ_WRITE_TOKEN environment variable.',
+            requiresCloudStorage: true
+          },
+          { status: 500 }
+        );
+      }
+    }
+
+    // Fallback to local filesystem (for local development)
+    if (IS_VERCEL && !USE_VERCEL_BLOB) {
+      return NextResponse.json(
+        { 
+          error: 'File uploads require Vercel Blob on Vercel. Please set BLOB_READ_WRITE_TOKEN environment variable in Vercel dashboard.',
+          requiresCloudStorage: true
+        },
+        { status: 501 }
+      );
+    }
+
+    // Local filesystem upload (development only)
     const uploadDir = type === 'image' ? 'public/images' : 'public/videos';
     const uploadPath = path.join(process.cwd(), uploadDir);
 

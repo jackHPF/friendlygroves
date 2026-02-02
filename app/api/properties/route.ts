@@ -35,8 +35,17 @@ export async function GET(request: Request) {
   }
 
   // Admin view includes hidden properties
-  const properties = admin ? await getAllPropertiesForAdmin() : await getAllProperties();
-  return NextResponse.json(properties);
+  try {
+    const properties = admin ? await getAllPropertiesForAdmin() : await getAllProperties();
+    console.log(`API: Returning ${properties.length} properties (admin=${admin})`);
+    return NextResponse.json(properties);
+  } catch (error) {
+    console.error('Error fetching properties:', error);
+    return NextResponse.json(
+      { error: 'Failed to load properties', details: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
+    );
+  }
 }
 
 export async function POST(request: Request) {

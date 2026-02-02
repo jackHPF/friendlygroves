@@ -342,6 +342,8 @@ export async function togglePropertyVisibility(id: string): Promise<Property | n
 }
 
 export async function getAllPropertiesForAdmin(): Promise<Property[]> {
+  // Always reload from storage to get latest data
+  propertiesCache = null;
   await initializeData();
   return [...propertiesCache!];
 }

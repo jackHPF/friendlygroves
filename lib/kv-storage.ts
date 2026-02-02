@@ -44,7 +44,7 @@ export async function readKV<T>(key: string, defaultValue: T): Promise<T> {
     }
 
     const fullKey = `${KV_PREFIX}${key}`;
-    const data = await kv.get<T>(fullKey);
+    const data = await kv.get(fullKey) as T | null;
     return data ?? defaultValue;
   } catch (error) {
     console.error(`Error reading KV key ${key}:`, error);

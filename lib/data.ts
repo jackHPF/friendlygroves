@@ -201,13 +201,17 @@ export function clearBookingsCache() {
 async function initializeData() {
   if (propertiesCache === null) {
     const loaded = await loadProperties();
+    const isKVConfigured = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
+    const isVercel = process.env.VERCEL === '1' || process.env.VERCEL_ENV;
+    
     // Only use defaults if:
     // 1. No data loaded AND
-    // 2. KV is not configured (meaning we're in local dev or KV isn't set up yet)
-    const isKVConfigured = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
-    
-    if (loaded.length === 0 && !isKVConfigured) {
+    // 2. NOT on Vercel (local dev only) AND
+    // 3. KV is not configured
+    // This prevents resetting to defaults on Vercel deployments
+    if (loaded.length === 0 && !isVercel && !isKVConfigured) {
       // First time in local dev - save default properties
+      console.log('Initializing with default properties (local dev, no KV)');
       propertiesCache = DEFAULT_PROPERTIES;
       try {
         await saveProperties(propertiesCache);
@@ -217,6 +221,10 @@ async function initializeData() {
       }
     } else {
       // Use loaded data (from KV or file), or empty array if KV is configured but empty
+      // On Vercel, if KV is not configured and no data exists, return empty array (don't reset to defaults)
+      if (loaded.length === 0 && isVercel && !isKVConfigured) {
+        console.warn('⚠️ Vercel KV is not configured! Properties will not persist across deployments. Please set up Vercel KV (see VERCEL_KV_SETUP.md)');
+      }
       propertiesCache = loaded;
     }
   }

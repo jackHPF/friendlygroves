@@ -144,23 +144,33 @@ export async function loadProperties(): Promise<Property[]> {
 // Save properties to KV or JSON file
 export async function saveProperties(properties: Property[]): Promise<void> {
   const isKVConfigured = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
+  const isVercel = process.env.VERCEL === '1' || process.env.VERCEL_ENV;
   
   // Try KV first (for Vercel production)
   if (isKVConfigured) {
     try {
       const { savePropertiesToKV } = await import('./kv-storage');
       await savePropertiesToKV(properties);
-      console.log(`Successfully saved ${properties.length} properties to KV`);
+      console.log(`✅ Successfully saved ${properties.length} properties to KV`);
       // If KV save succeeds, return early (don't save to file on Vercel)
       return;
     } catch (error) {
-      console.error('Error saving to KV:', error);
-      // Fall through to file storage as backup
+      console.error('❌ Error saving to KV:', error);
+      // On Vercel, if KV fails, we can't save to file storage (read-only)
+      if (isVercel) {
+        throw new Error('Failed to save to KV and file storage is not available on Vercel. Please check KV configuration.');
+      }
+      // Fall through to file storage as backup (local dev only)
     }
   }
   
-  // Fall back to file storage (for local development or if KV not configured)
-  console.log('Saving to file storage (KV not configured or failed)');
+  // Fall back to file storage (for local development only)
+  if (isVercel && !isKVConfigured) {
+    console.error('❌ Cannot save properties on Vercel without KV configured. Data will not persist.');
+    throw new Error('Vercel KV is not configured. Please set up KV storage (see VERCEL_KV_SETUP.md)');
+  }
+  
+  console.log('Saving to file storage (local development)');
 
   // Fall back to file storage (for local development)
   try {

@@ -285,7 +285,11 @@ export default function PropertyForm({ property }: PropertyFormProps) {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to save property');
+        const errorMessage = errorData.details 
+          ? `${errorData.error}: ${errorData.details}`
+          : errorData.error || 'Failed to save property';
+        console.error('Property save error:', errorData);
+        throw new Error(errorMessage);
       }
 
       setSuccess(true);

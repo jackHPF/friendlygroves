@@ -303,8 +303,17 @@ export async function updateProperty(id: string, updates: Partial<Property>): Pr
   };
   
   propertiesCache![index] = updatedProperty;
-  console.log(`Updating property ${id} with ${updates.images?.length || 0} images`);
-  await saveProperties(propertiesCache!);
+  console.log(`Updating property ${id} (${updatedProperty.name}) with ${updatedProperty.images?.length || 0} images:`, updatedProperty.images);
+  
+  // Save to storage
+  try {
+    await saveProperties(propertiesCache!);
+    console.log(`✅ Successfully saved property ${id} with ${updatedProperty.images?.length || 0} images`);
+  } catch (error) {
+    console.error(`❌ Failed to save property ${id}:`, error);
+    throw error; // Re-throw to let caller know save failed
+  }
+  
   // Clear cache to force reload on next request
   clearPropertiesCache();
   return updatedProperty;

@@ -35,52 +35,51 @@ function isKVConfigured(): boolean {
   );
 }
 
-// Generic KV read/write functions
+// Generic Redis read/write functions
 export async function readKV<T>(key: string, defaultValue: T): Promise<T> {
   if (!isKVConfigured()) {
     return defaultValue;
   }
 
   try {
-    const kv = await getKVClient();
-    if (!kv) {
+    const redis = await getRedisClient();
+    if (!redis) {
       return defaultValue;
     }
 
     const fullKey = `${KV_PREFIX}${key}`;
-    const data = await kv.get(fullKey) as T | null;
+    const data = await redis.get(fullKey) as T | null;
     return data ?? defaultValue;
   } catch (error) {
-    console.error(`Error reading KV key ${key}:`, error);
+    console.error(`Error reading Redis key ${key}:`, error);
     return defaultValue;
   }
 }
 
 export async function writeKV<T>(key: string, data: T): Promise<void> {
   if (!isKVConfigured()) {
-    const error = new Error(`KV not configured, cannot write ${key}. Please set KV_REST_API_URL and KV_REST_API_TOKEN environment variables.`);
-    console.error(error.message);
-    throw error;
+    throw new Error(`Redis/KV not configured, cannot write ${key}. Please set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN (or KV_REST_API_URL and KV_REST_API_TOKEN) environment variables.`);
   }
 
   try {
-    const kv = await getKVClient();
-    if (!kv) {
-      const error = new Error('KV client not available. @vercel/kv package may not be installed or KV connection failed.');
+    const redis = await getRedisClient();
+    if (!redis) {
+      const error = new Error('Redis client not available. @upstash/redis package may not be installed or Redis connection failed.');
       console.error(error.message);
       throw error;
     }
 
     const fullKey = `${KV_PREFIX}${key}`;
-    console.log(`Writing to KV: ${fullKey} (data size: ${JSON.stringify(data).length} bytes)`);
-    await kv.set(fullKey, data);
-    console.log(`✅ Successfully wrote to KV: ${fullKey}`);
+    const dataSize = JSON.stringify(data).length;
+    console.log(`Writing to Redis: ${fullKey} (data size: ${dataSize} bytes)`);
+    await redis.set(fullKey, data);
+    console.log(`✅ Successfully wrote to Redis: ${fullKey}`);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     const errorDetails = error instanceof Error ? error.stack : String(error);
-    console.error(`❌ Error writing KV key ${key}:`, errorMessage);
+    console.error(`❌ Error writing Redis key ${key}:`, errorMessage);
     console.error('Error details:', errorDetails);
-    throw new Error(`Failed to write to KV storage (${key}): ${errorMessage}`);
+    throw new Error(`Failed to write to Redis storage (${key}): ${errorMessage}`);
   }
 }
 

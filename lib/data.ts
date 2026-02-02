@@ -278,20 +278,27 @@ export async function getAllProperties(includeHidden: boolean = false): Promise<
 
 // Admin functions for property management
 export async function createProperty(propertyData: Omit<Property, 'id' | 'createdAt' | 'updatedAt'>): Promise<Property> {
-  await initializeData();
-  const newProperty: Property = {
-    ...propertyData,
-    id: `prop-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    hidden: propertyData.hidden || false,
-    videos: propertyData.videos || [],
-  };
-  propertiesCache!.push(newProperty);
-  await saveProperties(propertiesCache!);
-  // Clear cache to force reload on next request
-  clearPropertiesCache();
-  return newProperty;
+  try {
+    await initializeData();
+    const newProperty: Property = {
+      ...propertyData,
+      id: `prop-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      hidden: propertyData.hidden || false,
+      videos: propertyData.videos || [],
+    };
+    propertiesCache!.push(newProperty);
+    console.log(`Creating property: ${newProperty.name} with ${newProperty.images?.length || 0} images`);
+    await saveProperties(propertiesCache!);
+    console.log(`Successfully created property: ${newProperty.name}`);
+    // Clear cache to force reload on next request
+    clearPropertiesCache();
+    return newProperty;
+  } catch (error) {
+    console.error('Error in createProperty:', error);
+    throw error; // Re-throw to let API route handle it
+  }
 }
 
 export async function updateProperty(id: string, updates: Partial<Property>): Promise<Property | null> {

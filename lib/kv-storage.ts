@@ -54,20 +54,29 @@ export async function readKV<T>(key: string, defaultValue: T): Promise<T> {
 
 export async function writeKV<T>(key: string, data: T): Promise<void> {
   if (!isKVConfigured()) {
-    throw new Error(`KV not configured, cannot write ${key}`);
+    const error = new Error(`KV not configured, cannot write ${key}. Please set KV_REST_API_URL and KV_REST_API_TOKEN environment variables.`);
+    console.error(error.message);
+    throw error;
   }
 
   try {
     const kv = await getKVClient();
     if (!kv) {
-      throw new Error('KV client not available');
+      const error = new Error('KV client not available. @vercel/kv package may not be installed or KV connection failed.');
+      console.error(error.message);
+      throw error;
     }
 
     const fullKey = `${KV_PREFIX}${key}`;
+    console.log(`Writing to KV: ${fullKey} (data size: ${JSON.stringify(data).length} bytes)`);
     await kv.set(fullKey, data);
+    console.log(`✅ Successfully wrote to KV: ${fullKey}`);
   } catch (error) {
-    console.error(`Error writing KV key ${key}:`, error);
-    throw error;
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorDetails = error instanceof Error ? error.stack : String(error);
+    console.error(`❌ Error writing KV key ${key}:`, errorMessage);
+    console.error('Error details:', errorDetails);
+    throw new Error(`Failed to write to KV storage (${key}): ${errorMessage}`);
   }
 }
 

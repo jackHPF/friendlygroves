@@ -50,7 +50,9 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const data: PropertyFormData = await request.json();
+    const body = await request.text();
+    console.log('POST /api/properties - Request body:', body.substring(0, 500)); // Log first 500 chars
+    const data: PropertyFormData = JSON.parse(body);
 
     // Validate required fields
     if (
@@ -80,6 +82,13 @@ export async function POST(request: Request) {
       );
     }
 
+    console.log('Creating property with data:', {
+      name: data.name,
+      slug: data.slug,
+      imagesCount: data.images?.length || 0,
+      hasVideos: !!data.videos?.length,
+    });
+
     const newProperty = await createProperty({
       name: data.name,
       location: data.location,
@@ -102,6 +111,7 @@ export async function POST(request: Request) {
       cancellationPolicy: data.cancellationPolicy || '',
     });
 
+    console.log('Property created successfully:', newProperty.id);
     return NextResponse.json(newProperty, { status: 201 });
   } catch (error) {
     console.error('Error creating property:', error);

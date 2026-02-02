@@ -129,9 +129,6 @@ export async function loadProperties(): Promise<Property[]> {
   // Fall back to file storage (for local development or if KV not configured)
   try {
     console.log('Loading from file storage (KV not configured or failed)');
-
-  // Fall back to file storage (for local development)
-  try {
     await ensureDataDir();
     if (!existsSync(PROPERTIES_FILE)) {
       return [];

@@ -229,7 +229,11 @@ async function initializeData() {
 }
 
 // Helper functions - now async
-export async function getPropertyBySlug(slug: string): Promise<Property | undefined> {
+export async function getPropertyBySlug(slug: string, forceReload: boolean = false): Promise<Property | undefined> {
+  // Force reload if requested (e.g., after updates)
+  if (forceReload) {
+    propertiesCache = null;
+  }
   await initializeData();
   return propertiesCache!.find(p => p.slug === slug);
 }

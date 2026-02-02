@@ -10,12 +10,19 @@ import {
   Bath,
 } from 'lucide-react';
 
+// Force dynamic rendering to always get fresh data (no caching)
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 interface PropertyDetailPageProps {
   params: Promise<{ slug: string }>;
 }
 
 export default async function PropertyDetailPage({ params }: PropertyDetailPageProps) {
   const { slug } = await params;
+  // Clear cache before fetching to ensure fresh data
+  const { clearPropertiesCache } = await import('@/lib/data');
+  clearPropertiesCache();
   const property = await getPropertyBySlug(slug);
 
   if (!property) {

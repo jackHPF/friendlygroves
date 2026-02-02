@@ -202,7 +202,10 @@ async function initializeData() {
   if (propertiesCache === null) {
     try {
       const loaded = await loadProperties();
-      const isKVConfigured = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
+      const isKVConfigured = !!(
+        (process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL) &&
+        (process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN)
+      );
       const isVercel = process.env.VERCEL === '1' || process.env.VERCEL_ENV;
       
       console.log(`initializeData: Loaded ${loaded.length} properties (KV=${isKVConfigured}, Vercel=${isVercel})`);

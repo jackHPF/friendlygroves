@@ -112,16 +112,23 @@ export async function writeJsonFile<T>(filename: string, data: T): Promise<void>
 // Load properties from JSON file or KV
 export async function loadProperties(): Promise<Property[]> {
   // Try KV first (for Vercel production)
-  try {
-    const { loadPropertiesFromKV } = await import('./kv-storage');
-    const kvProperties = await loadPropertiesFromKV();
-    if (kvProperties.length > 0 || process.env.KV_REST_API_URL) {
+  const isKVConfigured = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
+  
+  if (isKVConfigured) {
+    try {
+      const { loadPropertiesFromKV } = await import('./kv-storage');
+      const kvProperties = await loadPropertiesFromKV();
+      // If KV is configured, always use KV data (even if empty)
       return kvProperties;
+    } catch (error) {
+      console.error('Error loading from KV, falling back to file storage:', error);
+      // Fall through to file storage
     }
-  } catch (error) {
-    // KV not configured or error, fall back to file storage
-    console.log('KV not available, using file storage');
   }
+  
+  // Fall back to file storage (for local development or if KV not configured)
+  try {
+    console.log('Loading from file storage (KV not configured or failed)');
 
   // Fall back to file storage (for local development)
   try {
@@ -139,16 +146,24 @@ export async function loadProperties(): Promise<Property[]> {
 
 // Save properties to KV or JSON file
 export async function saveProperties(properties: Property[]): Promise<void> {
+  const isKVConfigured = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
+  
   // Try KV first (for Vercel production)
-  try {
-    const { savePropertiesToKV } = await import('./kv-storage');
-    await savePropertiesToKV(properties);
-    // If KV save succeeds, also try to save to file (for local backup)
-    // but don't fail if file save fails
-  } catch (error) {
-    // KV not configured or error, fall back to file storage
-    console.log('KV not available, using file storage');
+  if (isKVConfigured) {
+    try {
+      const { savePropertiesToKV } = await import('./kv-storage');
+      await savePropertiesToKV(properties);
+      console.log(`Successfully saved ${properties.length} properties to KV`);
+      // If KV save succeeds, return early (don't save to file on Vercel)
+      return;
+    } catch (error) {
+      console.error('Error saving to KV:', error);
+      // Fall through to file storage as backup
+    }
   }
+  
+  // Fall back to file storage (for local development or if KV not configured)
+  console.log('Saving to file storage (KV not configured or failed)');
 
   // Fall back to file storage (for local development)
   try {

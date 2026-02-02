@@ -21,9 +21,10 @@ interface PropertyDetailPageProps {
 export default async function PropertyDetailPage({ params }: PropertyDetailPageProps) {
   const { slug } = await params;
   // Clear cache before fetching to ensure fresh data
-  const { clearPropertiesCache } = await import('@/lib/data');
+  const { clearPropertiesCache, getPropertyBySlug } = await import('@/lib/data');
   clearPropertiesCache();
-  const property = await getPropertyBySlug(slug);
+  // Force reload from storage
+  const property = await getPropertyBySlug(slug, true);
 
   if (!property) {
     notFound();

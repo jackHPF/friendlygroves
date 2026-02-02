@@ -279,6 +279,8 @@ export async function createProperty(propertyData: Omit<Property, 'id' | 'create
 }
 
 export async function updateProperty(id: string, updates: Partial<Property>): Promise<Property | null> {
+  // Clear cache first to ensure we load fresh data
+  clearPropertiesCache();
   await initializeData();
   const index = propertiesCache!.findIndex(p => p.id === id);
   if (index === -1) {
@@ -293,6 +295,7 @@ export async function updateProperty(id: string, updates: Partial<Property>): Pr
   };
   
   propertiesCache![index] = updatedProperty;
+  console.log(`Updating property ${id} with ${updates.images?.length || 0} images`);
   await saveProperties(propertiesCache!);
   // Clear cache to force reload on next request
   clearPropertiesCache();

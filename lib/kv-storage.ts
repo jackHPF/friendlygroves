@@ -1,33 +1,37 @@
 import { Property, Review, Booking } from '@/types';
 
-// Vercel KV storage adapter for persistent data storage
+// Upstash Redis storage adapter for persistent data storage
 // This replaces file-based storage on Vercel
+// Note: Vercel KV has been deprecated and moved to Upstash Redis via Marketplace
 
 const KV_PREFIX = 'friendlygroves:';
 
-// Lazy load KV to handle cases where package isn't installed
-let kvClient: any = null;
+// Lazy load Redis client to handle cases where package isn't installed
+let redisClient: any = null;
 
-async function getKVClient() {
-  if (kvClient !== null) {
-    return kvClient;
+async function getRedisClient() {
+  if (redisClient !== null) {
+    return redisClient;
   }
 
   try {
-    const kvModule = await import('@vercel/kv');
-    kvClient = kvModule.kv;
-    return kvClient;
+    const { Redis } = await import('@upstash/redis');
+    redisClient = new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN,
+    });
+    return redisClient;
   } catch (error) {
-    console.warn('@vercel/kv not available:', error);
+    console.warn('@upstash/redis not available:', error);
     return null;
   }
 }
 
-// Check if Vercel KV is configured
+// Check if Redis/KV is configured
 function isKVConfigured(): boolean {
   return !!(
-    process.env.KV_REST_API_URL &&
-    process.env.KV_REST_API_TOKEN
+    (process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL) &&
+    (process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN)
   );
 }
 

@@ -109,10 +109,13 @@ export async function writeJsonFile<T>(filename: string, data: T): Promise<void>
   }
 }
 
-// Load properties from JSON file or KV
+// Load properties from JSON file or Redis/KV
 export async function loadProperties(): Promise<Property[]> {
-  // Try KV first (for Vercel production)
-  const isKVConfigured = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
+  // Try Redis/KV first (for Vercel production)
+  const isKVConfigured = !!(
+    (process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL) &&
+    (process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN)
+  );
   
   if (isKVConfigured) {
     try {
@@ -141,9 +144,12 @@ export async function loadProperties(): Promise<Property[]> {
   }
 }
 
-// Save properties to KV or JSON file
+// Save properties to Redis/KV or JSON file
 export async function saveProperties(properties: Property[]): Promise<void> {
-  const isKVConfigured = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
+  const isKVConfigured = !!(
+    (process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL) &&
+    (process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN)
+  );
   const isVercel = process.env.VERCEL === '1' || process.env.VERCEL_ENV;
   
   console.log(`saveProperties: Attempting to save ${properties.length} properties (KV=${isKVConfigured}, Vercel=${isVercel})`);
@@ -153,7 +159,7 @@ export async function saveProperties(properties: Property[]): Promise<void> {
     try {
       const { savePropertiesToKV } = await import('./kv-storage');
       await savePropertiesToKV(properties);
-      console.log(`✅ Successfully saved ${properties.length} properties to KV`);
+      console.log(`✅ Successfully saved ${properties.length} properties to Redis`);
       // If KV save succeeds, return early (don't save to file on Vercel)
       return;
     } catch (error) {
@@ -161,7 +167,7 @@ export async function saveProperties(properties: Property[]): Promise<void> {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       // On Vercel, if KV fails, we can't save to file storage (read-only)
       if (isVercel) {
-        throw new Error(`Failed to save to KV: ${errorMessage}. Please check KV configuration and ensure KV_REST_API_URL and KV_REST_API_TOKEN are set correctly.`);
+        throw new Error(`Failed to save to Redis: ${errorMessage}. Please check Redis configuration and ensure UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN (or KV_REST_API_URL and KV_REST_API_TOKEN) are set correctly.`);
       }
       // Fall through to file storage as backup (local dev only)
       console.warn('Falling back to file storage (local dev)');
@@ -170,7 +176,7 @@ export async function saveProperties(properties: Property[]): Promise<void> {
   
   // Fall back to file storage (for local development only)
   if (isVercel && !isKVConfigured) {
-    const errorMsg = 'Vercel KV is not configured. Please set up KV storage (see VERCEL_KV_SETUP.md). Properties cannot be saved on Vercel without KV.';
+    const errorMsg = 'Redis/KV storage is not configured. Please set up Upstash Redis from Vercel Marketplace (see VERCEL_KV_SETUP.md). Properties cannot be saved on Vercel without Redis.';
     console.error('❌', errorMsg);
     throw new Error(errorMsg);
   }

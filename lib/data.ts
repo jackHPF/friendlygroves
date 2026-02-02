@@ -201,8 +201,13 @@ export function clearBookingsCache() {
 async function initializeData() {
   if (propertiesCache === null) {
     const loaded = await loadProperties();
-    if (loaded.length === 0) {
-      // First time - save default properties
+    // Only use defaults if:
+    // 1. No data loaded AND
+    // 2. KV is not configured (meaning we're in local dev or KV isn't set up yet)
+    const isKVConfigured = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
+    
+    if (loaded.length === 0 && !isKVConfigured) {
+      // First time in local dev - save default properties
       propertiesCache = DEFAULT_PROPERTIES;
       try {
         await saveProperties(propertiesCache);
@@ -211,6 +216,7 @@ async function initializeData() {
         console.warn('Could not save default properties, using in-memory cache');
       }
     } else {
+      // Use loaded data (from KV or file), or empty array if KV is configured but empty
       propertiesCache = loaded;
     }
   }

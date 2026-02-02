@@ -200,32 +200,40 @@ export function clearBookingsCache() {
 // Initialize data on first load
 async function initializeData() {
   if (propertiesCache === null) {
-    const loaded = await loadProperties();
-    const isKVConfigured = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
-    const isVercel = process.env.VERCEL === '1' || process.env.VERCEL_ENV;
-    
-    // Only use defaults if:
-    // 1. No data loaded AND
-    // 2. NOT on Vercel (local dev only) AND
-    // 3. KV is not configured
-    // This prevents resetting to defaults on Vercel deployments
-    if (loaded.length === 0 && !isVercel && !isKVConfigured) {
-      // First time in local dev - save default properties
-      console.log('Initializing with default properties (local dev, no KV)');
-      propertiesCache = DEFAULT_PROPERTIES;
-      try {
-        await saveProperties(propertiesCache);
-      } catch (error) {
-        // If save fails (e.g., read-only filesystem), continue with in-memory cache
-        console.warn('Could not save default properties, using in-memory cache');
+    try {
+      const loaded = await loadProperties();
+      const isKVConfigured = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
+      const isVercel = process.env.VERCEL === '1' || process.env.VERCEL_ENV;
+      
+      console.log(`initializeData: Loaded ${loaded.length} properties (KV=${isKVConfigured}, Vercel=${isVercel})`);
+      
+      // Only use defaults if:
+      // 1. No data loaded AND
+      // 2. NOT on Vercel (local dev only) AND
+      // 3. KV is not configured
+      // This prevents resetting to defaults on Vercel deployments
+      if (loaded.length === 0 && !isVercel && !isKVConfigured) {
+        // First time in local dev - save default properties
+        console.log('Initializing with default properties (local dev, no KV)');
+        propertiesCache = DEFAULT_PROPERTIES;
+        try {
+          await saveProperties(propertiesCache);
+        } catch (error) {
+          // If save fails (e.g., read-only filesystem), continue with in-memory cache
+          console.warn('Could not save default properties, using in-memory cache');
+        }
+      } else {
+        // Use loaded data (from KV or file), or empty array if KV is configured but empty
+        // On Vercel, if KV is not configured and no data exists, return empty array (don't reset to defaults)
+        if (loaded.length === 0 && isVercel && !isKVConfigured) {
+          console.warn('⚠️ Vercel KV is not configured! Properties will not persist across deployments. Please set up Vercel KV (see VERCEL_KV_SETUP.md)');
+        }
+        propertiesCache = loaded;
       }
-    } else {
-      // Use loaded data (from KV or file), or empty array if KV is configured but empty
-      // On Vercel, if KV is not configured and no data exists, return empty array (don't reset to defaults)
-      if (loaded.length === 0 && isVercel && !isKVConfigured) {
-        console.warn('⚠️ Vercel KV is not configured! Properties will not persist across deployments. Please set up Vercel KV (see VERCEL_KV_SETUP.md)');
-      }
-      propertiesCache = loaded;
+    } catch (error) {
+      console.error('Error in initializeData:', error);
+      // Set empty array on error to prevent crashes
+      propertiesCache = [];
     }
   }
   if (reviewsCache === null) {

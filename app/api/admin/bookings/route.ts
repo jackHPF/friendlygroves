@@ -3,7 +3,13 @@ import { getAllBookings } from '@/lib/data';
 
 export async function GET() {
   try {
+    console.log('GET /api/admin/bookings: Fetching all bookings...');
+    // Clear cache to ensure fresh data
+    const { clearBookingsCache } = await import('@/lib/data');
+    clearBookingsCache();
+    
     const bookings = await getAllBookings();
+    console.log(`GET /api/admin/bookings: Found ${bookings.length} bookings`);
     return NextResponse.json(bookings);
   } catch (error) {
     console.error('Error fetching bookings:', error);

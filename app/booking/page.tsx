@@ -20,6 +20,7 @@ function BookingPageContent() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [isSubmitted, setIsSubmitted] = useState(false); // Track if booking was successfully submitted
 
   useEffect(() => {
     if (formData.propertyId) {
@@ -78,6 +79,12 @@ function BookingPageContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Prevent duplicate submissions
+    if (isSubmitted || isSubmitting) {
+      return;
+    }
+    
     setIsSubmitting(true);
     setSubmitStatus('idle');
 
@@ -90,17 +97,39 @@ function BookingPageContent() {
         body: JSON.stringify(formData),
       });
 
+      console.log('Response status:', response.status, response.statusText);
+      
+      let responseData;
+      try {
+        const text = await response.text();
+        console.log('Response text:', text);
+        responseData = text ? JSON.parse(text) : {};
+      } catch (parseError) {
+        console.error('Failed to parse response:', parseError);
+        responseData = { error: 'Failed to parse server response' };
+      }
+      
       if (response.ok) {
+        console.log('Booking created successfully:', responseData);
         setSubmitStatus('success');
-        // In production, redirect to payment or confirmation page
+        setIsSubmitted(true); // Mark as submitted to prevent duplicate submissions
+        setIsSubmitting(false); // Reset submitting state so button shows correct text
+        // Disable form fields after successful submission
       } else {
+        console.error('Booking submission error:', responseData);
         setSubmitStatus('error');
+        setIsSubmitting(false); // Re-enable on error so user can retry
+        // Show specific error message if available
+        if (responseData.error) {
+          alert(`Booking failed: ${responseData.error}`);
+        } else {
+          alert(`Booking failed with status ${response.status}`);
+        }
       }
     } catch (error) {
       console.error('Error submitting booking:', error);
       setSubmitStatus('error');
-    } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false); // Re-enable on error so user can retry
     }
   };
 
@@ -128,7 +157,8 @@ function BookingPageContent() {
                       value={formData.guestName}
                       onChange={handleChange}
                       required
-                      className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                      disabled={isSubmitted}
+                      className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500"
                     />
                   </div>
 
@@ -143,7 +173,8 @@ function BookingPageContent() {
                       value={formData.guestEmail}
                       onChange={handleChange}
                       required
-                      className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                      disabled={isSubmitted}
+                      className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500"
                     />
                   </div>
 
@@ -158,7 +189,8 @@ function BookingPageContent() {
                       value={formData.guestPhone}
                       onChange={handleChange}
                       required
-                      className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                      disabled={isSubmitted}
+                      className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500"
                       placeholder="+91 1234567890"
                     />
                   </div>
@@ -173,7 +205,8 @@ function BookingPageContent() {
                       value={formData.specialRequests}
                       onChange={handleChange}
                       rows={4}
-                      className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                      disabled={isSubmitted}
+                      className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500"
                       placeholder="Any special requests or requirements..."
                     />
                   </div>
@@ -188,17 +221,22 @@ function BookingPageContent() {
 
               {submitStatus === 'error' && (
                 <div className="rounded-lg bg-red-50 p-4 text-red-800">
-                  An error occurred. Please try again or contact us directly.
+                  <p className="font-semibold">An error occurred.</p>
+                  <p className="text-sm mt-1">Please try again or contact us directly at friendlygroves@gmail.com</p>
                 </div>
               )}
 
               <button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || isSubmitted}
                 className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
               >
                 <CreditCard className="h-5 w-5" />
-                {isSubmitting ? 'Processing...' : 'Confirm Booking Request'}
+                {isSubmitting 
+                  ? 'Processing...' 
+                  : isSubmitted 
+                  ? 'Booking Submitted ✓' 
+                  : 'Confirm Booking Request'}
               </button>
             </form>
           </div>

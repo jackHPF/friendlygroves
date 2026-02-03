@@ -260,26 +260,41 @@ export async function saveReviews(reviews: Review[]): Promise<void> {
 
 // Load bookings from KV or JSON file
 export async function loadBookings(): Promise<Booking[]> {
+  const isKVConfigured = !!(
+    (process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL) &&
+    (process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN)
+  );
+  const isVercel = process.env.VERCEL === '1' || process.env.VERCEL_ENV;
+  
+  console.log(`loadBookings: Loading bookings (KV=${isKVConfigured}, Vercel=${isVercel})`);
+  
   // Try KV first (for Vercel production)
-  try {
-    const { loadBookingsFromKV } = await import('./kv-storage');
-    const kvBookings = await loadBookingsFromKV();
-    if (kvBookings.length > 0 || process.env.KV_REST_API_URL) {
+  if (isKVConfigured) {
+    try {
+      const { loadBookingsFromKV } = await import('./kv-storage');
+      const kvBookings = await loadBookingsFromKV();
+      console.log(`loadBookings: Loaded ${kvBookings.length} bookings from Redis`);
+      // Always return KV data if KV is configured (even if empty)
+      // This ensures KV is the source of truth when configured
       return kvBookings;
+    } catch (error) {
+      console.error('Error loading from KV, falling back to file storage:', error);
+      // Fall through to file storage
     }
-  } catch (error) {
-    // KV not configured or error, fall back to file storage
-    console.log('KV not available, using file storage');
   }
 
-  // Fall back to file storage (for local development)
+  // Fall back to file storage (for local development or if KV failed)
   try {
+    console.log('loadBookings: Loading from file storage');
     await ensureDataDir();
     if (!existsSync(BOOKINGS_FILE)) {
+      console.log('loadBookings: No bookings file found, returning empty array');
       return [];
     }
     const data = await readFile(BOOKINGS_FILE, 'utf-8');
-    return JSON.parse(data);
+    const bookings = JSON.parse(data);
+    console.log(`loadBookings: Loaded ${bookings.length} bookings from file storage`);
+    return bookings;
   } catch (error) {
     console.error('Error loading bookings:', error);
     return [];
@@ -288,30 +303,55 @@ export async function loadBookings(): Promise<Booking[]> {
 
 // Save bookings to KV or JSON file
 export async function saveBookings(bookings: Booking[]): Promise<void> {
+  const isKVConfigured = !!(
+    (process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL) &&
+    (process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN)
+  );
+  const isVercel = process.env.VERCEL === '1' || process.env.VERCEL_ENV;
+  
+  console.log(`saveBookings: Attempting to save ${bookings.length} bookings (KV=${isKVConfigured}, Vercel=${isVercel})`);
+  
   // Try KV first (for Vercel production)
-  try {
-    const { saveBookingsToKV } = await import('./kv-storage');
-    await saveBookingsToKV(bookings);
-  } catch (error) {
-    // KV not configured or error, fall back to file storage
-    console.log('KV not available, using file storage');
+  if (isKVConfigured) {
+    try {
+      const { saveBookingsToKV } = await import('./kv-storage');
+      await saveBookingsToKV(bookings);
+      console.log(`✅ Successfully saved ${bookings.length} bookings to Redis`);
+      return; // Return early if KV save succeeds
+    } catch (error) {
+      console.error('❌ Error saving to KV:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      // On Vercel, if KV fails, we can't save to file storage (read-only)
+      if (isVercel) {
+        throw new Error(`Failed to save to Redis: ${errorMessage}. Please check Redis configuration.`);
+      }
+      // Fall through to file storage as backup (local dev only)
+      console.warn('Falling back to file storage (local dev)');
+    }
   }
-
+  
+  // Fall back to file storage (for local development only)
+  if (isVercel && !isKVConfigured) {
+    const errorMsg = 'Redis/KV storage is not configured. Please set up Upstash Redis from Vercel Marketplace. Bookings cannot be saved on Vercel without Redis.';
+    console.error('❌', errorMsg);
+    throw new Error(errorMsg);
+  }
+  
+  console.log('Saving bookings to file storage (local development)');
+  
   // Fall back to file storage (for local development)
   try {
     await ensureDataDir();
     await writeFile(BOOKINGS_FILE, JSON.stringify(bookings, null, 2), 'utf-8');
+    console.log(`✅ Successfully saved ${bookings.length} bookings to file storage`);
   } catch (error: any) {
     // On Vercel, writes might fail due to read-only filesystem
     if (error.code === 'EACCES' || error.code === 'EROFS') {
       console.warn('Cannot save bookings - read-only filesystem. KV storage is recommended for production.');
-      return;
+      throw new Error('Cannot save bookings - read-only filesystem. Please configure Redis/KV storage.');
     }
     console.error('Error saving bookings:', error);
-    // Only throw if it's not a filesystem permission error
-    if (error.code !== 'EACCES' && error.code !== 'EROFS') {
-      throw error;
-    }
+    throw error;
   }
 }
 

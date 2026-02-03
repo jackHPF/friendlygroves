@@ -421,15 +421,33 @@ export async function checkAvailability(
 }
 
 export async function createBooking(bookingData: Omit<Booking, 'id' | 'createdAt'>): Promise<Booking> {
-  await initializeData();
-  const newBooking: Booking = {
-    ...bookingData,
-    id: `booking-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-    createdAt: new Date().toISOString(),
-  };
-  bookingsCache!.push(newBooking);
-  await saveBookings(bookingsCache!);
-  return newBooking;
+  try {
+    console.log('createBooking: Starting...', bookingData);
+    await initializeData();
+    console.log('createBooking: Data initialized');
+    
+    const newBooking: Booking = {
+      ...bookingData,
+      id: `booking-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      createdAt: new Date().toISOString(),
+    };
+    console.log('createBooking: New booking object created:', newBooking.id);
+    
+    bookingsCache!.push(newBooking);
+    console.log('createBooking: Added to cache, total bookings:', bookingsCache!.length);
+    
+    await saveBookings(bookingsCache!);
+    console.log('createBooking: Saved to storage successfully');
+    
+    // Clear cache to force reload on next request
+    clearBookingsCache();
+    console.log('createBooking: Cache cleared');
+    
+    return newBooking;
+  } catch (error) {
+    console.error('createBooking: Error occurred:', error);
+    throw error;
+  }
 }
 
 export async function getBookingsByEmail(email: string): Promise<Booking[]> {
@@ -438,6 +456,8 @@ export async function getBookingsByEmail(email: string): Promise<Booking[]> {
 }
 
 export async function getAllBookings(): Promise<Booking[]> {
+  // Always reload from storage to get latest data
+  bookingsCache = null;
   await initializeData();
   return [...bookingsCache!];
 }

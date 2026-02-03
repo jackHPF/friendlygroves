@@ -437,6 +437,27 @@ export async function getBookingsByEmail(email: string): Promise<Booking[]> {
   return bookingsCache!.filter(b => b.guestEmail === email && b.status === 'confirmed');
 }
 
+export async function getAllBookings(): Promise<Booking[]> {
+  await initializeData();
+  return [...bookingsCache!];
+}
+
+export async function updateBookingStatus(
+  bookingId: string,
+  status: 'pending' | 'confirmed' | 'cancelled'
+): Promise<Booking | null> {
+  await initializeData();
+  const booking = bookingsCache!.find(b => b.id === bookingId);
+  if (!booking) {
+    return null;
+  }
+  
+  booking.status = status;
+  await saveBookings(bookingsCache!);
+  clearBookingsCache();
+  return booking;
+}
+
 // For backward compatibility - synchronous versions that use cache
 // These should only be used after initializeData has been called
 export function getPropertyBySlugSync(slug: string): Property | undefined {

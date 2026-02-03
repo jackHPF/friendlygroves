@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Home, Phone, FileText, User, LogOut, Menu, X, Mail } from 'lucide-react';
+import { Home, Phone, FileText, User, LogOut, Menu, X, Mail, Calendar } from 'lucide-react';
 
 export default function AdminLayout({
   children,
@@ -116,6 +116,7 @@ export default function AdminLayout({
 
   const navItems = [
     { href: '/admin', label: 'Properties', icon: Home },
+    { href: '/admin/bookings', label: 'Bookings', icon: Calendar },
     { href: '/admin/inquiries', label: 'Inquiries', icon: Mail },
     { href: '/admin/contact', label: 'Contact Details', icon: Phone },
     { href: '/admin/content', label: 'Static Content', icon: FileText },

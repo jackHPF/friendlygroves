@@ -59,14 +59,14 @@ export default function Footer() {
               </li>
               <li className="flex items-center gap-2">
                 <Mail className="h-4 w-4 flex-shrink-0" />
-                <a href="mailto:info@friendlygroves.co.in" className="hover:text-white">
-                  info@friendlygroves.co.in
+                <a href="mailto:friendlygroves@gmail.com" className="hover:text-white">
+                  friendlygroves@gmail.com
                 </a>
               </li>
               <li className="flex items-center gap-2">
                 <Phone className="h-4 w-4 flex-shrink-0" />
-                <a href="tel:+911234567890" className="hover:text-white">
-                  +91 XXXXX XXXXX
+                <a href="tel:+918007775341" className="hover:text-white">
+                  +91 8007775341
                 </a>
               </li>
             </ul>
@@ -102,6 +102,17 @@ export default function Footer() {
         </div>
 
         <div className="mt-8 border-t border-gray-800 pt-8 text-center text-sm">
+          <p className="mb-2">
+            Designed and hosted by{' '}
+            <a
+              href="https://highperflow.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-400 hover:text-blue-300 hover:underline"
+            >
+              Highperflow
+            </a>
+          </p>
           <p>
             &copy; {new Date().getFullYear()} Friendly Groves. All rights reserved.
           </p>

@@ -203,16 +203,16 @@ export default function ContactForm({
         </button>
       </form>
 
-      <div className="mt-6 border-t border-gray-200 pt-6">
+        <div className="mt-6 border-t border-gray-200 pt-6">
         <p className="mb-2 text-sm font-medium text-gray-700">Direct Contact:</p>
         <div className="space-y-2 text-sm text-gray-600">
           <p className="flex items-center gap-2">
             <Mail className="h-4 w-4" />
-            info@friendlygroves.co.in
+            friendlygroves@gmail.com
           </p>
           <p className="flex items-center gap-2">
             <Phone className="h-4 w-4" />
-            +91 XXXXX XXXXX
+            +91 8007775341
           </p>
         </div>
       </div>

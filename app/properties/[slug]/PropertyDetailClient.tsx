@@ -3,8 +3,8 @@
 import { Property } from '@/types';
 import BookingCalendar from '@/components/BookingCalendar';
 import ContactForm from '@/components/ContactForm';
-import ReviewsSection from '@/components/ReviewsSection';
-import FeedbackForm from '@/components/FeedbackForm';
+// import ReviewsSection from '@/components/ReviewsSection'; // Hidden per user request
+// import FeedbackForm from '@/components/FeedbackForm'; // Hidden per user request
 import ImageGallery from '@/components/ImageGallery';
 import {
   MapPin,
@@ -369,18 +369,18 @@ export default function PropertyDetailClient({ property }: PropertyDetailClientP
               </div>
             )}
 
-            {/* Reviews Section */}
-            <div className="mb-8 border-b border-gray-200 pb-8">
+            {/* Reviews Section - Hidden per user request */}
+            {/* <div className="mb-8 border-b border-gray-200 pb-8">
               <ReviewsSection propertyId={property.id} />
-            </div>
+            </div> */}
 
-            {/* Feedback Form */}
-            <div className="mb-8 border-b border-gray-200 pb-8">
+            {/* Feedback Form - Hidden per user request */}
+            {/* <div className="mb-8 border-b border-gray-200 pb-8">
               <FeedbackForm
                 propertyId={property.id}
                 propertyName={property.name}
               />
-            </div>
+            </div> */}
 
             {/* Contact Form */}
             <div className="mb-8" id="contact-section">

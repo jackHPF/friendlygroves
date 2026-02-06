@@ -34,6 +34,22 @@ export const metadata: Metadata = {
       'Discover premium rental apartments in Visakhapatnam. Beautiful accommodations with modern amenities.',
     type: 'website',
     url: 'https://www.friendlygroves.co.in',
+    images: [
+      {
+        url: 'https://www.friendlygroves.co.in/images/friendly-groves-logo.png',
+        width: 1024,
+        height: 1024,
+        alt: 'Friendly Groves Logo',
+      },
+    ],
+    siteName: 'Friendly Groves',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'Friendly Groves - Premium Rental Apartments in Vizag',
+    description:
+      'Discover premium rental apartments in Visakhapatnam. Beautiful accommodations with modern amenities.',
+    images: ['https://www.friendlygroves.co.in/images/friendly-groves-logo.png'],
   },
 };
 

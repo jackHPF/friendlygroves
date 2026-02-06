@@ -20,6 +20,14 @@ export const metadata: Metadata = {
     'furnished apartments Vizag',
     'Friendly Groves',
   ],
+  icons: {
+    icon: [
+      { url: '/icon.png', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/apple-icon.png', type: 'image/png' },
+    ],
+  },
   openGraph: {
     title: 'Friendly Groves - Premium Rental Apartments in Vizag',
     description:

@@ -36,20 +36,21 @@ export const metadata: Metadata = {
     url: 'https://www.friendlygroves.co.in',
     images: [
       {
-        url: 'https://www.friendlygroves.co.in/images/friendly-groves-logo.png',
-        width: 1024,
-        height: 1024,
+        url: 'https://www.friendlygroves.co.in/opengraph-image.jpg',
+        width: 1200,
+        height: 1200,
         alt: 'Friendly Groves Logo',
       },
     ],
     siteName: 'Friendly Groves',
+    locale: 'en_US',
   },
   twitter: {
-    card: 'summary',
+    card: 'summary_large_image',
     title: 'Friendly Groves - Premium Rental Apartments in Vizag',
     description:
       'Discover premium rental apartments in Visakhapatnam. Beautiful accommodations with modern amenities.',
-    images: ['https://www.friendlygroves.co.in/images/friendly-groves-logo.png'],
+    images: ['https://www.friendlygroves.co.in/opengraph-image.jpg'],
   },
 };
 
